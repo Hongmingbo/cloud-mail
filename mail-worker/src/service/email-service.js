@@ -362,15 +362,12 @@ const emailService = {
 		}
 
 		const dateStr = dayjs().format('YYYY-MM-DD');
-		let daySendTotal = await c.env.kv.get(kvConst.SEND_DAY_COUNT + dateStr);
+		const daySendTotalRow = await c.env.db.prepare('SELECT count FROM day_send_count WHERE date = ?').bind(dateStr).first();
+		let daySendTotal = daySendTotalRow ? Number(daySendTotalRow.count) : 0;
 
 		//记录每天发件次数统计
-		if (!daySendTotal) {
-			await c.env.kv.put(kvConst.SEND_DAY_COUNT + dateStr, JSON.stringify(receiveEmail.length), { expirationTtl: 60 * 60 * 24 });
-		} else  {
-			daySendTotal = Number(daySendTotal) + receiveEmail.length
-			await c.env.kv.put(kvConst.SEND_DAY_COUNT + dateStr, JSON.stringify(daySendTotal), { expirationTtl: 60 * 60 * 24 });
-		}
+		daySendTotal += receiveEmail.length;
+		await c.env.db.prepare('INSERT OR REPLACE INTO day_send_count (date, count) VALUES (?, ?)').bind(dateStr, daySendTotal).run();
 
 		return [ emailResult ];
 	},

@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS day_send_count (
+    date TEXT PRIMARY KEY,
+    count INTEGER NOT NULL DEFAULT 0
+);

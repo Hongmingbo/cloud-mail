@@ -79,7 +79,7 @@ const analysisService = {
 			analysisDao.receiveDayCount(c, diffHours),
 			analysisDao.sendDayCount(c, diffHours),
 
-			c.env.kv.get(kvConst.SEND_DAY_COUNT + dayjs().format('YYYY-MM-DD')),
+			c.env.db.prepare('SELECT count FROM day_send_count WHERE date = ?').bind(dayjs().format('YYYY-MM-DD')).first().then(r => r ? Number(r.count) : 0),
 		]);
 
 
