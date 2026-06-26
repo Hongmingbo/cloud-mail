@@ -1,12 +1,12 @@
 import BizError from '../error/biz-error';
 import constant from '../const/constant';
 import jwtUtils from '../utils/jwt-utils';
-import KvConst from '../const/kv-const';
 import dayjs from 'dayjs';
 import userService from '../service/user-service';
 import permService from '../service/perm-service';
 import { t } from '../i18n/i18n'
 import app from '../hono/hono';
+import authStore from '../service/auth-store';
 
 const exclude = [
 	'/login',
@@ -121,7 +121,7 @@ app.use('*', async (c, next) => {
 	}
 
 	const { userId, token } = result;
-	const authInfo = await c.env.kv.get(KvConst.AUTH_INFO + userId, { type: 'json' });
+	const authInfo = await authStore.getJson(c, userId);
 
 	if (!authInfo) {
 		throw new BizError(t('authExpired'), 401);
@@ -157,7 +157,7 @@ app.use('*', async (c, next) => {
 	if (!nowTime.isSame(refreshTime)) {
 		authInfo.refreshTime = dayjs().toISOString();
 		await userService.updateUserInfo(c, authInfo.user.userId);
-		await c.env.kv.put(KvConst.AUTH_INFO + userId, JSON.stringify(authInfo), { expirationTtl: constant.TOKEN_EXPIRE });
+		await authStore.put(c, userId, authInfo);
 	}
 
 	c.set('user',authInfo.user)
